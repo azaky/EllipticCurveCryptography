@@ -21,21 +21,79 @@ public class ECC {
      * @param key
      * @return 
      */
-    public static byte[] encrypt(byte[] plainText, PublicKey key) {
-        // TODO: chunk the plainText into blocks.
+    public static byte[] encrypt(byte[] plainText, PublicKey key) throws Exception {
+        EllipticCurve c = key.getCurve();
+        ECPoint g = c.getBasePoint();
+        ECPoint publicKey = key.getKey();
+        BigInteger p = c.getP();
+        int numBits = p.bitLength();
+        int blockSize = getBlockSize(c);
+        int cipherTextBlockSize = getCipherTextBlockSize(c);
         
-        // TODO: encode each block into unique point.
+        // Pad the plainText
+        byte[] padded = pad(plainText, blockSize);
         
-        // TODO: encrypt each encoded point into a pair of points:
-        // [C_1, C_2] = s[kG, P_m + kP_G], where:
+        // Chunk the plainText into blocks.
+        byte[][] block = new byte[padded.length / blockSize][blockSize];
+        for (int i = 0; i < block.length; ++i) {
+            for (int j = 0; j < blockSize; ++j) {
+                block[i][j] = padded[i * blockSize + j];
+            }
+        }
+        
+        // Encode each block into unique point.
+        ECPoint[] encoded = new ECPoint[block.length];
+        for (int i = 0; i < encoded.length; ++i) {
+            encoded[i] = encode(block[i], c);
+        }
+        
+        // Encrypt each encoded point into a pair of points:
+        // [C_1, C_2] = [kG, P_m + kP_G], where:
         // k is a randomly generated integer such that 1 <= k < p-1,
         // G is the base point (provided in the key),
         // P_m is the encoded point from the plain text,
         // P_G is the point provided in the public key.
+        ECPoint[][] encrypted = new ECPoint[block.length][2];
+        Random rnd = new Random(System.currentTimeMillis());
+        for (int i = 0; i < encrypted.length; ++i) {
+            BigInteger k;
+            do {
+                k = new BigInteger(numBits, rnd);
+            } while (k.mod(p).compareTo(BigInteger.ZERO) == 0);
+            encrypted[i][0] = c.multiply(g, k);
+            encrypted[i][1] = c.add(encoded[i], c.multiply(publicKey, k));
+        }
         
-        // TODO: represent the ciphertext as an array of bytes
+        // Represent the ciphertext as an array of bytes
+        byte[] cipherText = new byte[encrypted.length + cipherTextBlockSize * 4];
+        for (int i = 0; i < encrypted.length; ++i) {
+            // encrypted[0].x
+            byte[] cipher = encrypted[i][0].x.toByteArray();
+            int offset = i * cipherTextBlockSize * 4 + cipherTextBlockSize * 0 + (cipherTextBlockSize - cipher.length);
+            for (int j = 0; j < cipher.length; ++j) {
+                cipherText[j + offset] = cipher[j];
+            }
+            // encrypted[0].y
+            cipher = encrypted[i][0].y.toByteArray();
+            offset = i * cipherTextBlockSize * 4 + cipherTextBlockSize * 1 + (cipherTextBlockSize - cipher.length);
+            for (int j = 0; j < cipher.length; ++j) {
+                cipherText[j + offset] = cipher[j];
+            }
+            // encrypted[1].x
+            cipher = encrypted[i][1].x.toByteArray();
+            offset = i * cipherTextBlockSize * 4 + cipherTextBlockSize * 2 + (cipherTextBlockSize - cipher.length);
+            for (int j = 0; j < cipher.length; ++j) {
+                cipherText[j + offset] = cipher[j];
+            }
+            // encrypted[1].y
+            cipher = encrypted[i][1].y.toByteArray();
+            offset = i * cipherTextBlockSize * 4 + cipherTextBlockSize * 3 + (cipherTextBlockSize - cipher.length);
+            for (int j = 0; j < cipher.length; ++j) {
+                cipherText[j + offset] = cipher[j];
+            }
+        }
         
-        return null;
+        return cipherText;
     }
     
     /**
@@ -62,6 +120,7 @@ public class ECC {
      * Generate a random key-pair, given the elliptic curve being used.
      * 
      * @param c
+     * @param rnd
      * @return
      */
     public static KeyPair generateKeyPair(EllipticCurve c, Random rnd) throws Exception {
@@ -98,7 +157,12 @@ public class ECC {
      * @return 
      */
     private static ECPoint encode(byte[] block, EllipticCurve c) throws Exception {
-        return koblitzProbabilistic(c, new BigInteger(block));
+        // pad two zero byte
+        byte[] paddedBlock = new byte[block.length + 2];
+        for (int i = 0; i < block.length; ++i) {
+            paddedBlock[i + 2] = block[i];
+        }
+        return koblitzProbabilistic(c, new BigInteger(paddedBlock));
     }
     
     /**
@@ -109,8 +173,73 @@ public class ECC {
      * @return 
      */
     private static byte[] decode(ECPoint point, EllipticCurve c) {
+        return point.x.divide(AUXILIARY_CONSTANT).toByteArray();
+    }
+    
+    /**
+     * Calculate the block size of plain text in bytes.
+     * 
+     * This assumes that the order of g over p is very close to |c|, as the
+     * recommended cofactor must be no larger than 4.
+     * 
+     * The chosen block size is max((bitLength(p) / 8) - 5, 1).
+     * 
+     * @param c
+     * @return 
+     */
+    private static int getBlockSize(EllipticCurve c) {
+        return Math.max(c.getP().bitLength() / 8 - 5, 1);
+    }
+    
+    /**
+     * Calculate the block size of cipher text given in bytes.
+     * 
+     * The chosen block size is (bitLength(p) / 8) + 5.
+     * 
+     * @param c
+     * @return 
+     */
+    private static int getCipherTextBlockSize(EllipticCurve c) {
+        return c.getP().bitLength() / 8 + 5;
+    }
+    
+    /**
+     * Pad the array of byte b so its length will be multiple of blockSize.
+     * 
+     * There will be at least one byte padded. The last byte will contain the
+     * number of padded bytes.
+     * 
+     * @param b
+     * @return 
+     */
+    private static byte[] pad(byte[] b, int blockSize) {
+        int paddedLength = blockSize - (b.length % blockSize);
+        byte[] padded = new byte[b.length + paddedLength];
+        for (int i = 0; i < b.length; ++i) {
+            padded[i] = b[i];
+        }
+        for (int i = 0; i < paddedLength - 1; ++i) {
+            padded[b.length + i] = 0;
+        }
+        padded[padded.length - 1] = (byte)paddedLength;
         
-        return null;
+        return padded;
+    }
+    
+    /**
+     * Recover the original array of byte given the padded array of byte b.
+     * 
+     * @param b
+     * @param blockSize
+     * @return 
+     */
+    private static byte[] unpad(byte[] b, int blockSize) {
+        int paddedLength = b[b.length - 1];
+        byte[] unpadded = new byte[b.length - paddedLength];
+        for (int i = 0; i < unpadded.length; ++i) {
+            unpadded[i] = b[i];
+        }
+        return unpadded;
     }
     
     /**
@@ -125,6 +254,8 @@ public class ECC {
      * the quadratic congruence is non-deterministic for p = 1 (mod 4). If
      * p equals 1 (mod 4), an exception will also be thrown.
      * 
+     * Source: http://www.ams.org/journals/mcom/1987-48-177/S0025-5718-1987-0866109-5/S0025-5718-1987-0866109-5.pdf
+     * 
      * @param c
      * @param x
      * @return 
@@ -138,7 +269,7 @@ public class ECC {
         }
         BigInteger pMinusOnePerTwo = p.subtract(BigInteger.ONE).shiftRight(1);
         
-        BigInteger tempX = x.multiply(AUXILIARY_CONSTANT);
+        BigInteger tempX = x.multiply(AUXILIARY_CONSTANT).mod(p);
         for (long k = 0; k < AUXILIARY_CONSTANT_LONG; ++k) {
             BigInteger newX = tempX.add(BigInteger.valueOf(k));
             
@@ -147,31 +278,67 @@ public class ECC {
             
             // Determine whether this value is a quadratic residue modulo p
             // It is if and only if a ^ ((p - 1) / 2) = 1 (mod p)
-            if (a.modPow(pMinusOnePerTwo, p).mod(p).compareTo(BigInteger.ONE) == 0) {
+            if (a.modPow(pMinusOnePerTwo, p).compareTo(BigInteger.ONE) == 0) {
                 // We found it! Now, the solution is y = a ^ ((p + 1) / 4)
                 BigInteger y = a.modPow(p.add(BigInteger.ONE).shiftRight(2), p);
-                return new ECPoint(newX, y);
+                return new ECPoint(newX.mod(p), y);
             }
         }
         
         // If we reach this point, then no point are found within the limit.
-        throw new Exception("No Point found within the auxiliary constant");
+        throw new Exception("No point found within the auxiliary constant");
     }
     
     public static void main(String[] args) {
         // using NIST_P_192 to test
         EllipticCurve c = EllipticCurve.NIST_P_192;
-        byte[] test = new byte[1];
+        Random rnd = new Random(System.currentTimeMillis());
+        byte[] test = new byte[20];
         
-        for (int i = 0; i < 256; ++i) {
-            test[0] = (byte)i;
+        int nTest = 1024;
+        int failed = 0;
+        
+        for (int i = 0; i < 1024; ++i) {
+            rnd.nextBytes(test);
             
             try {
                 ECPoint point = encode(test, c);
-                System.out.println("test " + i + " = " + point.toString(16) + " " + c.isPointInsideCurve(point));
+                byte[] decoded = decode(point, c);
+                boolean correctlyDecoded = true;
+                for (int j = 0; j < test.length || j < decoded.length; ++j) {
+                    if (j < test.length && j < decoded.length) {
+                        if (test[test.length - j - 1] != decoded[decoded.length - j - 1]) {
+                            correctlyDecoded = false;
+                            break;
+                        }
+                    }
+                    else if (j < test.length) {
+                        if (test[test.length - j - 1] != 0) {
+                            correctlyDecoded = false;
+                            break;
+                        }
+                    }
+                    else if (j < decoded.length) {
+                        if (decoded[decoded.length - j - 1] != 0) {
+                            correctlyDecoded = false;
+                            break;
+                        }
+                    }
+                }
+                
+                System.out.println("test " + i + " (encode) = " + c.isPointInsideCurve(point) + " " + point.toString());
+                System.out.println("test " + i + " (decode) = " + correctlyDecoded);
+                
+                if (!correctlyDecoded) {
+                    failed++;
+                }
             } catch (Exception ex) {
-                System.out.println("test " + i + " failed");
+//                System.out.println("test " + i + " failed: " + ex.getMessage());
+                ex.printStackTrace();
+                failed++;
             }
         }
+        
+        System.out.println("Failed: " + failed + " of " + nTest);
     }
 }
