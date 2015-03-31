@@ -65,7 +65,7 @@ public class ECC {
         }
         
         // Represent the ciphertext as an array of bytes
-        byte[] cipherText = new byte[encrypted.length + cipherTextBlockSize * 4];
+        byte[] cipherText = new byte[encrypted.length * cipherTextBlockSize * 4];
         for (int i = 0; i < encrypted.length; ++i) {
             // encrypted[0].x
             byte[] cipher = encrypted[i][0].x.toByteArray();
