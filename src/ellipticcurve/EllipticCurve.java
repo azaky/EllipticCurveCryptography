@@ -17,24 +17,30 @@ import java.math.BigInteger;
  */
 public class EllipticCurve {
     
+    // The three parameters of the elliptic curve equation.
     private BigInteger a;
     private BigInteger b;
     private BigInteger p;
+    
+    // The base point used to generate the other points
+    private EllipticCurvePoint g;
     
     // some BigInteger constants that might help us in some calculations
     private static BigInteger TWO = new BigInteger("2");
     private static BigInteger THREE = new BigInteger("3");
     
-    public EllipticCurve(BigInteger a, BigInteger b, BigInteger p) {
+    public EllipticCurve(BigInteger a, BigInteger b, BigInteger p, EllipticCurvePoint g) {
         this.a = a;
         this.b = b;
         this.p = p;
+        this.g = g;
     }
     
-    public EllipticCurve(long a, long b, long p) {
+    public EllipticCurve(long a, long b, long p, EllipticCurvePoint g) {
         this.a = BigInteger.valueOf(a);
         this.b = BigInteger.valueOf(b);
         this.p = BigInteger.valueOf(p);
+        this.g = g;
     }
     
     /**
@@ -146,8 +152,8 @@ public class EllipticCurve {
      */
     public static void main(String[] args) {
         // This computes (2, 4) + (5, 9) in y^2 = x^3 + x + 6 mod 11
-        EllipticCurve e = new EllipticCurve(1, 6, 11);
-        EllipticCurvePoint p = new EllipticCurvePoint(-9, 4);
+        EllipticCurve e = new EllipticCurve(1, 6, 11, new EllipticCurvePoint());
+        EllipticCurvePoint p = new EllipticCurvePoint(3, 5);
         EllipticCurvePoint q = new EllipticCurvePoint(5, 9);
         
         System.out.println(p + " + " + q + " = " + e.add(p, q));
