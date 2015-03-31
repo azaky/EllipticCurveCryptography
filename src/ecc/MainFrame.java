@@ -9,6 +9,7 @@ import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Random;
 import javax.swing.JFileChooser;
 
 /**
@@ -43,6 +44,7 @@ public class MainFrame extends javax.swing.JFrame {
         jTextField3 = new javax.swing.JTextField();
         jButton1 = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
+        jButton11 = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
         jLabel4 = new javax.swing.JLabel();
         jTextField4 = new javax.swing.JTextField();
@@ -117,6 +119,13 @@ public class MainFrame extends javax.swing.JFrame {
             }
         });
 
+        jButton11.setText("Process");
+        jButton11.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton11ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -128,7 +137,7 @@ public class MainFrame extends javax.swing.JFrame {
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel1)
                             .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 31, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel2)
                             .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -137,7 +146,8 @@ public class MainFrame extends javax.swing.JFrame {
                             .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jLabel3)))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(jButton11)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(jButton2)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jButton1)))
@@ -165,7 +175,8 @@ public class MainFrame extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1)
-                    .addComponent(jButton2))
+                    .addComponent(jButton2)
+                    .addComponent(jButton11))
                 .addGap(165, 165, 165))
         );
 
@@ -656,18 +667,26 @@ public class MainFrame extends javax.swing.JFrame {
 
     // Generate Private Key
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        
-        BigInteger parA = new BigInteger(jTextField1.getText());
-        BigInteger parB = new BigInteger(jTextField2.getText());
-        BigInteger parC = new BigInteger(jTextField3.getText());        
+        if (kP != null){
+            JFileChooser chooser = new JFileChooser();
+            int returnVal = chooser.showSaveDialog(this);
+            if(returnVal == JFileChooser.APPROVE_OPTION) {
+                String path = chooser.getSelectedFile().getAbsolutePath();
+                kP.getPrivateKey().saveToFile(path);
+            }
+        }       
     }//GEN-LAST:event_jButton2ActionPerformed
     
     // Generate Public Key
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        
-        BigInteger parA = new BigInteger(jTextField1.getText());
-        BigInteger parB = new BigInteger(jTextField2.getText());
-        BigInteger parC = new BigInteger(jTextField3.getText());
+        if (kP != null){
+            JFileChooser chooser = new JFileChooser();
+            int returnVal = chooser.showSaveDialog(this);
+            if(returnVal == JFileChooser.APPROVE_OPTION) {
+                String path = chooser.getSelectedFile().getAbsolutePath();
+                kP.getPublicKey().saveToFile(path);
+            }
+        }
     }//GEN-LAST:event_jButton1ActionPerformed
     
     // Browse Input File (Encryption)
@@ -788,7 +807,22 @@ public class MainFrame extends javax.swing.JFrame {
             e.printStackTrace();
         }
     }//GEN-LAST:event_jButton10ActionPerformed
-
+    // Process Generation
+    private void jButton11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton11ActionPerformed
+        BigInteger parA = new BigInteger(jTextField1.getText());
+        BigInteger parB = new BigInteger(jTextField2.getText());
+        BigInteger parC = new BigInteger(jTextField3.getText());
+        try {
+            kP = ECC.generateKeyPair(new EllipticCurve(parA,parB,parC), new Random(System.currentTimeMillis()));
+            System.out.println("Berhasil");
+        }
+        catch (Exception e){
+            
+        }
+    }//GEN-LAST:event_jButton11ActionPerformed
+    
+    KeyPair kP;
+    
     /**
      * @param args the command line arguments
      */
@@ -827,6 +861,7 @@ public class MainFrame extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton10;
+    private javax.swing.JButton jButton11;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
