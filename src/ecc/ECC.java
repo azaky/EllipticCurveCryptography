@@ -148,7 +148,7 @@ public class ECC {
         byte plainText[] = new byte[encoded.length * blockSize];
         for (int i = 0; i < encoded.length; ++i) {
             byte decoded[] = decode(encoded[i], c);
-            for (int j = 0; j < blockSize; ++j) {
+            for (int j = Math.max(blockSize - decoded.length, 0); j < blockSize; ++j) {
                 plainText[i * blockSize + j] = decoded[j + decoded.length - blockSize];
             }
         }
@@ -354,21 +354,42 @@ public class ECC {
         executionTime = System.currentTimeMillis() - startExecutionTime;
     }
     
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         // using NIST_P_192 to test
         EllipticCurve c = EllipticCurve.NIST_P_192;
         Random rnd = new Random(System.currentTimeMillis());
         
-        int nTest = 100;
+        int nTest = 10;
         int failed = 0;
         int size = 1024;
         
         byte[] test = new byte[size];
-        for (int i = 0; i < nTest; ++i) {
+        for (int itest = 0; itest < nTest; ++itest) {
+            System.out.println("Test " + itest + ": " + size + " Bytes");
             // randomize test
             rnd.nextBytes(test);
             
-            // generating 
+            // generate pair of keys
+            KeyPair keys = generateKeyPair(c, rnd);
+            System.out.println("\tGenerating key pair: " + getLastExecutionTime() + " ms");
+            
+            // encrypt test
+            byte[] cipherText = encrypt(test, keys.getPublicKey());
+            System.out.println("\tEncrypting         : " + getLastExecutionTime() + " ms");
+            
+            // decrypt the result
+            byte[] plainText = decrypt(cipherText, keys.getPrivateKey());
+            System.out.println("\tDecrypting         : " + getLastExecutionTime() + " ms");
+            
+            // compare them
+            boolean match = test.length == plainText.length;
+            for (int i = 0; i < test.length && i < plainText.length && match; ++i) {
+                if (test[i] != plainText[i]) {
+                    match = false;
+                    failed++;
+                }
+            }
+            System.out.println("\tResult             : " + match);
             
 //            rnd.nextBytes(test);
 //            
