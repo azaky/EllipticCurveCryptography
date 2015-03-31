@@ -1,5 +1,8 @@
 package ecc;
 
+import java.math.BigInteger;
+import java.util.Random;
+
 /**
  * This class implements El Gamal Public-Key Cryptography using Elliptic Curve.
  * 
@@ -8,6 +11,9 @@ package ecc;
  * @author Ahmad Zaky
  */
 public class ECC {
+    public static final long AUXILIARY_CONSTANT_LONG = 1000;
+    public static final BigInteger AUXILIARY_CONSTANT = BigInteger.valueOf(AUXILIARY_CONSTANT_LONG);
+    
     /**
      * The main encryption function of ECC.
      * 
@@ -58,8 +64,30 @@ public class ECC {
      * @param c
      * @return
      */
-    public static KeyPair generateKeyPair(EllipticCurve c) {
-        return null;
+    public static KeyPair generateKeyPair(EllipticCurve c, Random rnd) throws Exception {
+        // Randomly select the private key, such that it is relatively
+        // prime to p
+        BigInteger p = c.getP();
+        BigInteger privateKey;
+        do {
+            privateKey = new BigInteger(p.bitLength(), rnd);
+        } while (privateKey.mod(p).compareTo(BigInteger.ZERO) == 0);
+        
+        // Calculate the public key, k * g.
+        // First, randomly generate g if it is not present in the curve.
+        ECPoint g = c.getBasePoint();
+        if (g == null) {
+            // Randomly generate g using Koblits method.
+            // The starting value of x should be random.
+            BigInteger x = new BigInteger(p.bitLength(), rnd);
+            g = koblitzProbabilistic(c, x);
+        }
+        ECPoint publicKey = c.multiply(g, privateKey);
+        
+        return new KeyPair(
+                new PublicKey(c, publicKey),
+                new PrivateKey(c, privateKey)
+        );
     }
     
     /**
@@ -69,8 +97,8 @@ public class ECC {
      * @param c
      * @return 
      */
-    private static ECPoint encode(byte[] block, EllipticCurve c) {
-        return null;
+    private static ECPoint encode(byte[] block, EllipticCurve c) throws Exception {
+        return koblitzProbabilistic(c, new BigInteger(block));
     }
     
     /**
@@ -81,6 +109,69 @@ public class ECC {
      * @return 
      */
     private static byte[] decode(ECPoint point, EllipticCurve c) {
+        
         return null;
+    }
+    
+    /**
+     * Find a point inside the curve with the x-coordinate equals
+     * x * AUXILIARY_CONSTANT + k, where k is as small as possible.
+     * 
+     * There is a very small probability that k will be as large as the
+     * AUXILIARY_CONSTANT, and this method relies on the fact. If k exceeds
+     * the constant, an exception will be thrown.
+     * 
+     * This method works only for p = 3 (mod 4), as finding the solution to
+     * the quadratic congruence is non-deterministic for p = 1 (mod 4). If
+     * p equals 1 (mod 4), an exception will also be thrown.
+     * 
+     * @param c
+     * @param x
+     * @return 
+     */
+    private static ECPoint koblitzProbabilistic(EllipticCurve c, BigInteger x) throws Exception {
+        BigInteger p = c.getP();
+        
+        // throw an exception if p != 3 (mod 4)
+        if (!p.testBit(0) || !p.testBit(1)) {
+            throw new Exception("P should be 3 (mod 4)");
+        }
+        BigInteger pMinusOnePerTwo = p.subtract(BigInteger.ONE).shiftRight(1);
+        
+        BigInteger tempX = x.multiply(AUXILIARY_CONSTANT);
+        for (long k = 0; k < AUXILIARY_CONSTANT_LONG; ++k) {
+            BigInteger newX = tempX.add(BigInteger.valueOf(k));
+            
+            // Calculates the rhs of the elliptic curve equation, call it a
+            BigInteger a = c.calculateRhs(newX);
+            
+            // Determine whether this value is a quadratic residue modulo p
+            // It is if and only if a ^ ((p - 1) / 2) = 1 (mod p)
+            if (a.modPow(pMinusOnePerTwo, p).mod(p).compareTo(BigInteger.ONE) == 0) {
+                // We found it! Now, the solution is y = a ^ ((p + 1) / 4)
+                BigInteger y = a.modPow(p.add(BigInteger.ONE).shiftRight(2), p);
+                return new ECPoint(newX, y);
+            }
+        }
+        
+        // If we reach this point, then no point are found within the limit.
+        throw new Exception("No Point found within the auxiliary constant");
+    }
+    
+    public static void main(String[] args) {
+        // using NIST_P_192 to test
+        EllipticCurve c = EllipticCurve.NIST_P_192;
+        byte[] test = new byte[1];
+        
+        for (int i = 0; i < 256; ++i) {
+            test[0] = (byte)i;
+            
+            try {
+                ECPoint point = encode(test, c);
+                System.out.println("test " + i + " = " + point.toString(16) + " " + c.isPointInsideCurve(point));
+            } catch (Exception ex) {
+                System.out.println("test " + i + " failed");
+            }
+        }
     }
 }

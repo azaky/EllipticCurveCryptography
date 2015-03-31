@@ -23,7 +23,7 @@ public class EllipticCurve {
     private BigInteger p;
     
     // Optional attribute, the base point g.
-    private ECPoint g;
+    private ECPoint g = null;
     
     // some BigInteger constants that might help us in some calculations
     private static BigInteger THREE = new BigInteger("3");
@@ -60,6 +60,18 @@ public class EllipticCurve {
     
     public void setBasePoint(ECPoint g) {
         this.g = g;
+    }
+    
+    public BigInteger getA() {
+        return a;
+    }
+    
+    public BigInteger getB() {
+        return b;
+    }
+    
+    public BigInteger getP() {
+        return p;
     }
     
     // We provide some standard curves
@@ -217,6 +229,16 @@ public class EllipticCurve {
     
     public ECPoint multiply(ECPoint p1, long n) {
         return multiply(p1, BigInteger.valueOf(n));
+    }
+
+    /**
+     * Calculate the right hand side of the equation.
+     * 
+     * @param x
+     * @return 
+     */
+    public BigInteger calculateRhs(BigInteger x) {
+        return x.multiply(x).mod(p).add(a).multiply(x).add(b).mod(p);
     }
     
     /**
