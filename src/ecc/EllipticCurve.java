@@ -266,6 +266,5 @@ public class EllipticCurve {
             System.out.println(p + " x " + i + " = " + e.multiply(p, i));
         }
     }
-    
 
 }

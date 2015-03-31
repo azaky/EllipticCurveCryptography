@@ -140,6 +140,7 @@ public class ECC {
             // The starting value of x should be random.
             BigInteger x = new BigInteger(p.bitLength(), rnd);
             g = koblitzProbabilistic(c, x);
+            c.setBasePoint(g);
         }
         ECPoint publicKey = c.multiply(g, privateKey);
         
