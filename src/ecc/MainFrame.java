@@ -5,6 +5,7 @@
  */
 package ecc;
 
+import java.io.FileOutputStream;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,6 +46,7 @@ public class MainFrame extends javax.swing.JFrame {
         jButton1 = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
         jButton11 = new javax.swing.JButton();
+        jComboBox1 = new javax.swing.JComboBox();
         jPanel2 = new javax.swing.JPanel();
         jLabel4 = new javax.swing.JLabel();
         jTextField4 = new javax.swing.JTextField();
@@ -126,6 +128,13 @@ public class MainFrame extends javax.swing.JFrame {
             }
         });
 
+        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Custom", "NIST_P_192", "NIST_P_256", "NIST_P_384", "NIST_P_521" }));
+        jComboBox1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jComboBox1ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -145,12 +154,16 @@ public class MainFrame extends javax.swing.JFrame {
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jLabel3)))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addComponent(jButton11)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jButton2)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jButton1)))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(jButton11)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jButton2)
+                                .addGap(14, 14, 14)
+                                .addComponent(jButton1)))
+                        .addGap(0, 2, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -173,11 +186,13 @@ public class MainFrame extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton1)
+                    .addComponent(jButton11)
                     .addComponent(jButton2)
-                    .addComponent(jButton11))
-                .addGap(165, 165, 165))
+                    .addComponent(jButton1))
+                .addGap(134, 134, 134))
         );
 
         jTabbedPane1.addTab("Key Generator", jPanel1);
@@ -723,23 +738,30 @@ public class MainFrame extends javax.swing.JFrame {
         String inputFile = jTextField4.getText();
         String publicKeyFile = jTextField5.getText();
         String privateKeyFile = jTextField6.getText();
-        BigInteger parA = new BigInteger(jTextField7.getText());
-        BigInteger parB = new BigInteger(jTextField8.getText());
-        BigInteger parC = new BigInteger(jTextField9.getText());
-        BigInteger basePoint = new BigInteger(jTextField10.getText());
         try {
             Path path = Paths.get(inputFile);
             byte[] plainText = Files.readAllBytes(path);
 
-            if (publicKeyFile.length() > 1 && privateKeyFile.length() > 1){
+            if (publicKeyFile.length() > 1){
                 // Use File
-
+                
                 PublicKey publicKey = new PublicKey(publicKeyFile);
 
-                ECC.encrypt(plainText,publicKey);
+                byte[] byteFile = ECC.encrypt(plainText,publicKey);
+                JFileChooser chooser = new JFileChooser();
+                int returnVal = chooser.showSaveDialog(this);
+                if(returnVal == JFileChooser.APPROVE_OPTION) {
+                    String savePath = chooser.getSelectedFile().getAbsolutePath();
+                    FileOutputStream fos = new FileOutputStream(savePath);
+                    fos.write(byteFile);
+                    fos.close();
+                }
             }
             else {
-
+                BigInteger parA = new BigInteger(jTextField7.getText());
+                BigInteger parB = new BigInteger(jTextField8.getText());
+                BigInteger parC = new BigInteger(jTextField9.getText());
+                BigInteger basePoint = new BigInteger(jTextField10.getText());
             }
         }
         catch (Exception e){
@@ -820,6 +842,27 @@ public class MainFrame extends javax.swing.JFrame {
             
         }
     }//GEN-LAST:event_jButton11ActionPerformed
+
+    private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
+        int idx = jComboBox1.getSelectedIndex();
+        if (idx == 1) {
+            jTextField1.setText(EllipticCurve.NIST_P_192.getA().toString());
+            jTextField2.setText(EllipticCurve.NIST_P_192.getB().toString());
+            jTextField3.setText(EllipticCurve.NIST_P_192.getP().toString());
+        } else if (idx == 2) {
+            jTextField1.setText(EllipticCurve.NIST_P_256.getA().toString());
+            jTextField2.setText(EllipticCurve.NIST_P_256.getB().toString());
+            jTextField3.setText(EllipticCurve.NIST_P_256.getP().toString());
+        } else if (idx == 3) {
+            jTextField1.setText(EllipticCurve.NIST_P_384.getA().toString());
+            jTextField2.setText(EllipticCurve.NIST_P_384.getB().toString());
+            jTextField3.setText(EllipticCurve.NIST_P_384.getP().toString());
+        } else if (idx == 4) {
+            jTextField1.setText(EllipticCurve.NIST_P_521.getA().toString());
+            jTextField2.setText(EllipticCurve.NIST_P_521.getB().toString());
+            jTextField3.setText(EllipticCurve.NIST_P_521.getP().toString());
+        }
+    }//GEN-LAST:event_jComboBox1ActionPerformed
     
     KeyPair kP;
     
@@ -870,6 +913,7 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JButton jButton7;
     private javax.swing.JButton jButton8;
     private javax.swing.JButton jButton9;
+    private javax.swing.JComboBox jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
