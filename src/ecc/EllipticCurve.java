@@ -86,7 +86,10 @@ public class EllipticCurve {
                     new BigInteger("07192b95ffc8da78631011ed6b24cdd573f977a11e794811", 16)
             )
     );
-    
+
+    /**
+     * Warning: p = 1 (mod 4), cannot be used throughout the algorithm.
+     */
     public static final EllipticCurve NIST_P_224 = new EllipticCurve(
             new BigInteger("-3"),
             new BigInteger("b4050a850c04b3abf54132565044b0b7d7bfd8ba270b39432355ffb4", 16),
