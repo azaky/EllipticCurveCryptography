@@ -48,6 +48,7 @@ public class MainFrame extends javax.swing.JFrame {
         jButton2 = new javax.swing.JButton();
         jButton11 = new javax.swing.JButton();
         jComboBox1 = new javax.swing.JComboBox();
+        jLabel24 = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         jLabel4 = new javax.swing.JLabel();
         jTextField4 = new javax.swing.JTextField();
@@ -134,6 +135,8 @@ public class MainFrame extends javax.swing.JFrame {
             }
         });
 
+        jLabel24.setText("Time :");
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -161,7 +164,8 @@ public class MainFrame extends javax.swing.JFrame {
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(jButton2)
                                 .addGap(14, 14, 14)
-                                .addComponent(jButton1)))
+                                .addComponent(jButton1))
+                            .addComponent(jLabel24))
                         .addGap(0, 2, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -191,7 +195,9 @@ public class MainFrame extends javax.swing.JFrame {
                     .addComponent(jButton11)
                     .addComponent(jButton2)
                     .addComponent(jButton1))
-                .addGap(134, 134, 134))
+                .addGap(109, 109, 109)
+                .addComponent(jLabel24)
+                .addContainerGap())
         );
 
         jTabbedPane1.addTab("Key Generator", jPanel1);
@@ -253,9 +259,9 @@ public class MainFrame extends javax.swing.JFrame {
             }
         });
 
-        jLabel20.setText("Time : 0.2");
+        jLabel20.setText("Time :");
 
-        jLabel21.setText("Size (After) : 32");
+        jLabel21.setText("Size (After) :");
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -414,9 +420,9 @@ public class MainFrame extends javax.swing.JFrame {
             }
         });
 
-        jLabel22.setText("Time : 0.2");
+        jLabel22.setText("Time :");
 
-        jLabel23.setText("Size (After) : 32");
+        jLabel23.setText("Size (After) :");
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
@@ -679,7 +685,8 @@ public class MainFrame extends javax.swing.JFrame {
                     fos.write(byteFile);
                     fos.close();
                     File f = new File(savePath);
-                    jLabel21.setText("Size(After) : " + f.getTotalSpace());
+                    jLabel20.setText("Time : " + ECC.getLastExecutionTime() + " ms");
+                    jLabel21.setText("Size(After) : " + f.getTotalSpace() + " B");
                 }
             }
             else {
@@ -740,7 +747,8 @@ public class MainFrame extends javax.swing.JFrame {
                     fos.close();
                     
                     File f = new File(savePath);
-                    jLabel23.setText("Size(After) : " + f.getTotalSpace());
+                    jLabel22.setText("Time : " + ECC.getLastExecutionTime() + " ms");
+                    jLabel23.setText("Size(After) : " + f.getTotalSpace() + " B");
                 }
             }
             else {
@@ -762,7 +770,7 @@ public class MainFrame extends javax.swing.JFrame {
         BigInteger parC = new BigInteger(jTextField3.getText());
         try {
             kP = ECC.generateKeyPair(new EllipticCurve(parA,parB,parC), new Random(System.currentTimeMillis()));
-            System.out.println("Berhasil");
+            jLabel24.setText("Time : " + ECC.getLastExecutionTime() + " ms");
         }
         catch (Exception e){
             
@@ -861,6 +869,7 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel21;
     private javax.swing.JLabel jLabel22;
     private javax.swing.JLabel jLabel23;
+    private javax.swing.JLabel jLabel24;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
