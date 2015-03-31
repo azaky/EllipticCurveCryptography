@@ -9,7 +9,7 @@ import java.math.BigInteger;
  * c, the elliptic curve used in the calculations,
  * k is the private key, a randomly-generated integer, satisfying 1 <= k < p-1.
  * 
- * @author Ahmad Zaky
+ * @author Ahmad Zaky & Alif Raditya Rochman
  */
 public class PrivateKey {
     private EllipticCurve c;
@@ -18,6 +18,10 @@ public class PrivateKey {
     public PrivateKey(EllipticCurve c, BigInteger k) {
         this.c = c;
         this.k = k;
+    }
+    
+    public PrivateKey(String pathFile){
+        //TODO : Create from file
     }
     
     public void setCurve(EllipticCurve c) {
@@ -47,16 +51,6 @@ public class PrivateKey {
      * @param path
      */
     public void saveToFile(String path) {
-        
-    }
-    
-    /**
-     * Load the current key from a *.pri file.
-     * TODO: design the representation of the key inside a binary file
-     * 
-     * @param path
-     */
-    public void loadFromFile(String path) {
         
     }
 }

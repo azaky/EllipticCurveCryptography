@@ -19,6 +19,10 @@ public class PublicKey {
         this.P_K = P_K;
     }
     
+    public PublicKey(String pathFile){
+        //TODO : Create from file
+    }
+    
     public EllipticCurve getCurve() {
         return c;
     }
@@ -46,16 +50,6 @@ public class PublicKey {
      * @param path
      */
     public void saveToFile(String path) {
-        
-    }
-    
-    /**
-     * Load the current key from a *.pub file.
-     * TODO: design the representation of the key inside a binary file
-     * 
-     * @param path
-     */
-    public void loadFromFile(String path) {
         
     }
 }
