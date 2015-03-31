@@ -805,23 +805,31 @@ public class MainFrame extends javax.swing.JFrame {
         String inputFile = jTextField11.getText();
         String publicKeyFile = jTextField12.getText();
         String privateKeyFile = jTextField13.getText();
-        BigInteger parA = new BigInteger(jTextField14.getText());
-        BigInteger parB = new BigInteger(jTextField15.getText());
-        BigInteger parC = new BigInteger(jTextField16.getText());
-        BigInteger basePoint = new BigInteger(jTextField17.getText());
-        
         try {
             Path path = Paths.get(inputFile);
             byte[] cipherText = Files.readAllBytes(path);
 
-            if (publicKeyFile.length() > 1 && privateKeyFile.length() > 1){
+            if ( privateKeyFile.length() > 1){
                 // Use File
 
                 PrivateKey privateKey = new PrivateKey(privateKeyFile);
 
-                ECC.decrypt(cipherText, privateKey);
+                
+                byte[] byteFile = ECC.decrypt(cipherText, privateKey);
+                JFileChooser chooser = new JFileChooser();
+                int returnVal = chooser.showSaveDialog(this);
+                if(returnVal == JFileChooser.APPROVE_OPTION) {
+                    String savePath = chooser.getSelectedFile().getAbsolutePath();
+                    FileOutputStream fos = new FileOutputStream(savePath);
+                    fos.write(byteFile);
+                    fos.close();
+                }
             }
             else {
+                BigInteger parA = new BigInteger(jTextField14.getText());
+                BigInteger parB = new BigInteger(jTextField15.getText());
+                BigInteger parC = new BigInteger(jTextField16.getText());
+                BigInteger basePoint = new BigInteger(jTextField17.getText());
 
             }
         }
