@@ -14,6 +14,10 @@ public class ECC {
     public static final long AUXILIARY_CONSTANT_LONG = 1000;
     public static final BigInteger AUXILIARY_CONSTANT = BigInteger.valueOf(AUXILIARY_CONSTANT_LONG);
     
+    // The execution time of the last action, in millisecond.
+    private static long executionTime = -1;
+    private static long startExecutionTime;
+    
     /**
      * The main encryption function of ECC.
      * 
@@ -22,6 +26,8 @@ public class ECC {
      * @return 
      */
     public static byte[] encrypt(byte[] plainText, PublicKey key) throws Exception {
+        initializeExecutionTime();
+        
         EllipticCurve c = key.getCurve();
         ECPoint g = c.getBasePoint();
         ECPoint publicKey = key.getKey();
@@ -93,6 +99,8 @@ public class ECC {
             }
         }
         
+        finalizeExecutionTime();
+        
         return cipherText;
     }
     
@@ -104,6 +112,8 @@ public class ECC {
      * @return 
      */
     public static byte[] decrypt(byte[] cipherText, PrivateKey key) throws Exception {
+        initializeExecutionTime();
+        
         EllipticCurve c = key.getCurve();
         ECPoint g = c.getBasePoint();
         BigInteger privateKey = key.getKey();
@@ -131,19 +141,21 @@ public class ECC {
         for (int i = 0; i < block.length; i += 4) {
             ECPoint c1 = new ECPoint(new BigInteger(block[i]), new BigInteger(block[i + 1]));
             ECPoint c2 = new ECPoint(new BigInteger(block[i + 2]), new BigInteger(block[i + 3]));
-            encoded[i] = c.subtract(c2, c.multiply(c1, privateKey));
+            encoded[i / 4] = c.subtract(c2, c.multiply(c1, privateKey));
         }
         
         // Decode the encoded point
         byte plainText[] = new byte[encoded.length * blockSize];
-        for (int i = 0; i < block.length; ++i) {
+        for (int i = 0; i < encoded.length; ++i) {
             byte decoded[] = decode(encoded[i], c);
             for (int j = 0; j < blockSize; ++j) {
-                plainText[i * blockSize + j] = decoded[j + decoded.length - plainText.length];
+                plainText[i * blockSize + j] = decoded[j + decoded.length - blockSize];
             }
         }
+        plainText = unpad(plainText, blockSize);
         
-        return unpad(plainText, blockSize);
+        finalizeExecutionTime();
+        return plainText;
     }
     
     /**
@@ -154,6 +166,8 @@ public class ECC {
      * @return
      */
     public static KeyPair generateKeyPair(EllipticCurve c, Random rnd) throws Exception {
+        initializeExecutionTime();
+        
         // Randomly select the private key, such that it is relatively
         // prime to p
         BigInteger p = c.getP();
@@ -174,10 +188,22 @@ public class ECC {
         }
         ECPoint publicKey = c.multiply(g, privateKey);
         
-        return new KeyPair(
+        KeyPair result = new KeyPair(
                 new PublicKey(c, publicKey),
                 new PrivateKey(c, privateKey)
         );
+        
+        finalizeExecutionTime();
+        return result;
+    }
+    
+    /**
+     * Get the execution time of the last executed (public) method.
+     * 
+     * @return -1 if there was no executed method yet.
+     */
+    public static long getLastExecutionTime() {
+        return executionTime;
     }
     
     /**
@@ -320,54 +346,68 @@ public class ECC {
         throw new Exception("No point found within the auxiliary constant");
     }
     
+    private static void initializeExecutionTime() {
+        startExecutionTime = System.currentTimeMillis();
+    }
+    
+    private static void finalizeExecutionTime() {
+        executionTime = System.currentTimeMillis() - startExecutionTime;
+    }
+    
     public static void main(String[] args) {
         // using NIST_P_192 to test
         EllipticCurve c = EllipticCurve.NIST_P_192;
         Random rnd = new Random(System.currentTimeMillis());
-        byte[] test = new byte[20];
         
-        int nTest = 1024;
+        int nTest = 100;
         int failed = 0;
+        int size = 1024;
         
-        for (int i = 0; i < 1024; ++i) {
+        byte[] test = new byte[size];
+        for (int i = 0; i < nTest; ++i) {
+            // randomize test
             rnd.nextBytes(test);
             
-            try {
-                ECPoint point = encode(test, c);
-                byte[] decoded = decode(point, c);
-                boolean correctlyDecoded = true;
-                for (int j = 0; j < test.length || j < decoded.length; ++j) {
-                    if (j < test.length && j < decoded.length) {
-                        if (test[test.length - j - 1] != decoded[decoded.length - j - 1]) {
-                            correctlyDecoded = false;
-                            break;
-                        }
-                    }
-                    else if (j < test.length) {
-                        if (test[test.length - j - 1] != 0) {
-                            correctlyDecoded = false;
-                            break;
-                        }
-                    }
-                    else if (j < decoded.length) {
-                        if (decoded[decoded.length - j - 1] != 0) {
-                            correctlyDecoded = false;
-                            break;
-                        }
-                    }
-                }
-                
-                System.out.println("test " + i + " (encode) = " + c.isPointInsideCurve(point) + " " + point.toString());
-                System.out.println("test " + i + " (decode) = " + correctlyDecoded);
-                
-                if (!correctlyDecoded) {
-                    failed++;
-                }
-            } catch (Exception ex) {
-//                System.out.println("test " + i + " failed: " + ex.getMessage());
-                ex.printStackTrace();
-                failed++;
-            }
+            // generating 
+            
+//            rnd.nextBytes(test);
+//            
+//            try {
+//                ECPoint point = encode(test, c);
+//                byte[] decoded = decode(point, c);
+//                boolean correctlyDecoded = true;
+//                for (int j = 0; j < test.length || j < decoded.length; ++j) {
+//                    if (j < test.length && j < decoded.length) {
+//                        if (test[test.length - j - 1] != decoded[decoded.length - j - 1]) {
+//                            correctlyDecoded = false;
+//                            break;
+//                        }
+//                    }
+//                    else if (j < test.length) {
+//                        if (test[test.length - j - 1] != 0) {
+//                            correctlyDecoded = false;
+//                            break;
+//                        }
+//                    }
+//                    else if (j < decoded.length) {
+//                        if (decoded[decoded.length - j - 1] != 0) {
+//                            correctlyDecoded = false;
+//                            break;
+//                        }
+//                    }
+//                }
+//                
+//                System.out.println("test " + i + " (encode) = " + c.isPointInsideCurve(point) + " " + point.toString());
+//                System.out.println("test " + i + " (decode) = " + correctlyDecoded);
+//                
+//                if (!correctlyDecoded) {
+//                    failed++;
+//                }
+//            } catch (Exception ex) {
+////                System.out.println("test " + i + " failed: " + ex.getMessage());
+//                ex.printStackTrace();
+//                failed++;
+//            }
         }
         
         System.out.println("Failed: " + failed + " of " + nTest);
