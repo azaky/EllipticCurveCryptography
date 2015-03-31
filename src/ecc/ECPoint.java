@@ -71,4 +71,12 @@ public class ECPoint {
             return "(" + x.toString() + ", " + y.toString() + ")";
         }
     }
+
+    public String toString(int radix) {
+        if (isPointOfInfinity()) {
+            return "INFINITY";
+        } else {
+            return "(" + x.toString(radix) + ", " + y.toString(radix) + ")";
+        }
+    }
 }
