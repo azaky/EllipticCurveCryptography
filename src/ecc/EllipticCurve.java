@@ -1,4 +1,4 @@
-package ellipticcurve;
+package ecc;
 
 import java.math.BigInteger;
 
@@ -8,7 +8,7 @@ import java.math.BigInteger;
  * 4a^3 + 27b^2 != 0 (mod p).
  * 
  * A point in the elliptic curve will be represented as a pair of BigInteger,
- * which is represented as EllipticCurvePoint class.
+ * which is represented as ECPoint class.
  * 
  * This class implements some very basic operations of Points in the elliptic
  * curve, which are addition, multiplication (scalar), and subtraction.
@@ -22,31 +22,37 @@ public class EllipticCurve {
     private BigInteger b;
     private BigInteger p;
     
-    // The base point used to generate the other points
-    private EllipticCurvePoint g;
+    // Optional attribute, the base point g.
+    private ECPoint g;
     
     // some BigInteger constants that might help us in some calculations
     private static BigInteger TWO = new BigInteger("2");
     private static BigInteger THREE = new BigInteger("3");
     
-    public EllipticCurve(BigInteger a, BigInteger b, BigInteger p, EllipticCurvePoint g) {
+    public EllipticCurve(BigInteger a, BigInteger b, BigInteger p) {
         this.a = a;
         this.b = b;
         this.p = p;
-        this.g = g;
     }
     
-    public EllipticCurve(long a, long b, long p, EllipticCurvePoint g) {
+    public EllipticCurve(long a, long b, long p) {
         this.a = BigInteger.valueOf(a);
         this.b = BigInteger.valueOf(b);
         this.p = BigInteger.valueOf(p);
+    }
+    
+    public ECPoint getBasePoint() {
+        return g;
+    }
+    
+    public void setBasePoint(ECPoint g) {
         this.g = g;
     }
     
     /**
      * This method will check whether a point belong to this curve or not.
      */
-    public boolean isPointInsideCurve(EllipticCurvePoint point) {
+    public boolean isPointInsideCurve(ECPoint point) {
         if (point.isPointOfInfinity()) return true;
         
         return point.x.multiply(point.x).mod(p).add(a).multiply(point.x).add(b)
@@ -68,13 +74,13 @@ public class EllipticCurve {
      * @param p2
      * @return 
      */
-    public EllipticCurvePoint add(EllipticCurvePoint p1, EllipticCurvePoint p2) {
+    public ECPoint add(ECPoint p1, ECPoint p2) {
         if (p1 == null || p2 == null) return null;
         
         if (p1.isPointOfInfinity()) {
-            return new EllipticCurvePoint(p2);
+            return new ECPoint(p2);
         } else if (p2.isPointOfInfinity()) {
-            return new EllipticCurvePoint(p1);
+            return new ECPoint(p1);
         }
         
         // The lambda (the slope of the line formed by the two points) are
@@ -88,7 +94,7 @@ public class EllipticCurve {
                 lambda = nom.multiply(den.modInverse(p));
             } else {
                 // lambda = infinity
-                return EllipticCurvePoint.INFINTIY;
+                return ECPoint.INFINTIY;
             }
         } else {
             // lambda = (y2 - y1) / (x2 - x1)
@@ -101,7 +107,7 @@ public class EllipticCurve {
         // The result is (lambda^2 - x1 - y1, lambda(x2 - xr) - yp)
         BigInteger xr = lambda.multiply(lambda).subtract(p1.x).subtract(p2.x).mod(p);
         BigInteger yr = lambda.multiply(p1.x.subtract(xr)).subtract(p1.y).mod(p);
-        return new EllipticCurvePoint(xr, yr);
+        return new ECPoint(xr, yr);
     }
     
     /**
@@ -112,7 +118,7 @@ public class EllipticCurve {
      * @param p2
      * @return 
      */
-    public EllipticCurvePoint subtract(EllipticCurvePoint p1, EllipticCurvePoint p2) {
+    public ECPoint subtract(ECPoint p1, ECPoint p2) {
         if (p1 == null || p2 == null) return null;
         
         return add(p1, p2.negate());
@@ -126,12 +132,12 @@ public class EllipticCurve {
      * @param n
      * @return 
      */
-    public EllipticCurvePoint multiply(EllipticCurvePoint p1, BigInteger n) {
+    public ECPoint multiply(ECPoint p1, BigInteger n) {
         if (p1.isPointOfInfinity()) {
-            return EllipticCurvePoint.INFINTIY;
+            return ECPoint.INFINTIY;
         }
         
-        EllipticCurvePoint result = EllipticCurvePoint.INFINTIY;
+        ECPoint result = ECPoint.INFINTIY;
         int bitLength = n.bitLength();
         for (int i = bitLength - 1; i >= 0; --i) {
             result = add(result, result);
@@ -143,7 +149,7 @@ public class EllipticCurve {
         return result;
     }
     
-    public EllipticCurvePoint multiply(EllipticCurvePoint p1, long n) {
+    public ECPoint multiply(ECPoint p1, long n) {
         return multiply(p1, BigInteger.valueOf(n));
     }
     
@@ -152,14 +158,14 @@ public class EllipticCurve {
      */
     public static void main(String[] args) {
         // This computes (2, 4) + (5, 9) in y^2 = x^3 + x + 6 mod 11
-        EllipticCurve e = new EllipticCurve(1, 6, 11, new EllipticCurvePoint());
-        EllipticCurvePoint p = new EllipticCurvePoint(3, 5);
-        EllipticCurvePoint q = new EllipticCurvePoint(5, 9);
+        EllipticCurve e = new EllipticCurve(1, 6, 11);
+        ECPoint p = new ECPoint(3, 5);
+        ECPoint q = new ECPoint(5, 9);
         
         System.out.println(p + " + " + q + " = " + e.add(p, q));
         for (int i = 0; i < 20; ++i) {
             System.out.println(p + " x " + i + " = " + e.multiply(p, i));
         }
     }
-    
+
 }

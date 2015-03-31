@@ -1,4 +1,4 @@
-package ellipticcurve;
+package ecc;
 
 import java.math.BigInteger;
 
@@ -7,35 +7,35 @@ import java.math.BigInteger;
  * 
  * @author Ahmad Zaky
  */
-public class EllipticCurvePoint {
+public class ECPoint {
     public BigInteger x;
     public BigInteger y;
     private boolean pointOfInfinity;
     
-    public EllipticCurvePoint() {
+    public ECPoint() {
         this.x = this.y = BigInteger.ZERO;
         this.pointOfInfinity = false;
     }
     
-    public EllipticCurvePoint(BigInteger x, BigInteger y) {
+    public ECPoint(BigInteger x, BigInteger y) {
         this.x = x;
         this.y = y;
         this.pointOfInfinity = false;
     }
     
-    public EllipticCurvePoint(long x, long y) {
+    public ECPoint(long x, long y) {
         this.x = BigInteger.valueOf(x);
         this.y = BigInteger.valueOf(y);
         this.pointOfInfinity = false;
     }
     
-    public EllipticCurvePoint(EllipticCurvePoint p) {
+    public ECPoint(ECPoint p) {
         this.x = p.x;
         this.y = p.y;
         this.pointOfInfinity = p.pointOfInfinity;
     }
     
-    public boolean equals(EllipticCurvePoint point) {
+    public boolean equals(ECPoint point) {
         if (point == null) return false;
         
         if (this.pointOfInfinity == point.pointOfInfinity) return true;
@@ -47,21 +47,21 @@ public class EllipticCurvePoint {
         return pointOfInfinity;
     }
     
-    public EllipticCurvePoint negate() {
+    public ECPoint negate() {
         if (isPointOfInfinity()) {
             return INFINTIY;
         } else {
-            return new EllipticCurvePoint(x, y.negate());
+            return new ECPoint(x, y.negate());
         }
     }
     
-    private static EllipticCurvePoint infinity() {
-        EllipticCurvePoint point = new EllipticCurvePoint();
+    private static ECPoint infinity() {
+        ECPoint point = new ECPoint();
         point.pointOfInfinity = true;
         return point;
     }
     
-    public static final EllipticCurvePoint INFINTIY = infinity();
+    public static final ECPoint INFINTIY = infinity();
     
     @Override
     public String toString() {
